@@ -1,4 +1,6 @@
 using System.Net;
+using System.Net.Http.Json;
+using OrderService.Api.DTOs;
 
 namespace OrderService.Api.Services;
 
@@ -13,19 +15,16 @@ public class ProductClient : IProductClient
 
     public async Task<bool> ProductExistsAsync(int productId)
     {
-        var response = await _httpClient.GetAsync(
-            $"api/products/{productId}");
+        var response = await _httpClient
+            .GetAsync($"api/products/{productId}");
 
         return response.StatusCode == HttpStatusCode.OK;
     }
 
-    // ✅ 正确实现 DecreaseStockAsync
-    public async Task<bool> DecreaseStockAsync(int productId, int quantity)
+    public async Task<ProductDto?> GetProductAsync(int productId)
     {
-        var response = await _httpClient.PostAsync(
-            $"api/products/{productId}/decrease?quantity={quantity}",
-            null);
-
-        return response.IsSuccessStatusCode;
+        return await _httpClient
+            .GetFromJsonAsync<ProductDto>(
+                $"api/products/{productId}");
     }
 }

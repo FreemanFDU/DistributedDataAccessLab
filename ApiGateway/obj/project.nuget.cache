@@ -1,0 +1,28 @@
+{
+  "version": 2,
+  "dgSpecHash": "cotvI5ZXgD4=",
+  "success": true,
+  "projectFilePath": "/Users/dayufreeman/Desktop/大渔的奇幻世界_20230807/Fdu（整合）/ClassesFDU/2026/ProgrammingInternet/Class/DistributedDataAccessLab/ApiGateway/ApiGateway.csproj",
+  "expectedPackageFiles": [
+    "/Users/dayufreeman/.nuget/packages/fluentvalidation/12.1.1/fluentvalidation.12.1.1.nupkg.sha512",
+    "/Users/dayufreeman/.nuget/packages/ipaddressrange/6.3.0/ipaddressrange.6.3.0.nupkg.sha512",
+    "/Users/dayufreeman/.nuget/packages/microsoft.aspnetcore.jsonpatch/9.0.11/microsoft.aspnetcore.jsonpatch.9.0.11.nupkg.sha512",
+    "/Users/dayufreeman/.nuget/packages/microsoft.aspnetcore.middlewareanalysis/9.0.11/microsoft.aspnetcore.middlewareanalysis.9.0.11.nupkg.sha512",
+    "/Users/dayufreeman/.nuget/packages/microsoft.aspnetcore.mvc.newtonsoftjson/9.0.11/microsoft.aspnetcore.mvc.newtonsoftjson.9.0.11.nupkg.sha512",
+    "/Users/dayufreeman/.nuget/packages/microsoft.aspnetcore.openapi/10.0.1/microsoft.aspnetcore.openapi.10.0.1.nupkg.sha512",
+    "/Users/dayufreeman/.nuget/packages/microsoft.extensions.apidescription.server/10.0.0/microsoft.extensions.apidescription.server.10.0.0.nupkg.sha512",
+    "/Users/dayufreeman/.nuget/packages/microsoft.extensions.diagnosticadapter/3.1.32/microsoft.extensions.diagnosticadapter.3.1.32.nupkg.sha512",
+    "/Users/dayufreeman/.nuget/packages/microsoft.openapi/2.4.1/microsoft.openapi.2.4.1.nupkg.sha512",
+    "/Users/dayufreeman/.nuget/packages/newtonsoft.json/13.0.3/newtonsoft.json.13.0.3.nupkg.sha512",
+    "/Users/dayufreeman/.nuget/packages/newtonsoft.json.bson/1.0.2/newtonsoft.json.bson.1.0.2.nupkg.sha512",
+    "/Users/dayufreeman/.nuget/packages/ocelot/24.1.0/ocelot.24.1.0.nupkg.sha512",
+    "/Users/dayufreeman/.nuget/packages/ocelot.provider.polly/24.1.0/ocelot.provider.polly.24.1.0.nupkg.sha512",
+    "/Users/dayufreeman/.nuget/packages/polly/8.6.5/polly.8.6.5.nupkg.sha512",
+    "/Users/dayufreeman/.nuget/packages/polly.core/8.6.5/polly.core.8.6.5.nupkg.sha512",
+    "/Users/dayufreeman/.nuget/packages/swashbuckle.aspnetcore/10.1.7/swashbuckle.aspnetcore.10.1.7.nupkg.sha512",
+    "/Users/dayufreeman/.nuget/packages/swashbuckle.aspnetcore.swagger/10.1.7/swashbuckle.aspnetcore.swagger.10.1.7.nupkg.sha512",
+    "/Users/dayufreeman/.nuget/packages/swashbuckle.aspnetcore.swaggergen/10.1.7/swashbuckle.aspnetcore.swaggergen.10.1.7.nupkg.sha512",
+    "/Users/dayufreeman/.nuget/packages/swashbuckle.aspnetcore.swaggerui/10.1.7/swashbuckle.aspnetcore.swaggerui.10.1.7.nupkg.sha512"
+  ],
+  "logs": []
+}

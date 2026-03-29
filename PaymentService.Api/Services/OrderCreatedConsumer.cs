@@ -19,7 +19,6 @@ public class OrderCreatedConsumer : BackgroundService
     public OrderCreatedConsumer(IServiceScopeFactory scopeFactory)
     {
         _scopeFactory = scopeFactory;
-        InitializeRabbitMq();
     }
 
     private void InitializeRabbitMq()
@@ -28,58 +27,84 @@ public class OrderCreatedConsumer : BackgroundService
         {
             HostName = "rabbitmq",
             UserName = "guest",
-            Password = "guest"
+            Password = "guest",
+            DispatchConsumersAsync = true
         };
 
-        _connection = factory.CreateConnection();
-        _channel = _connection.CreateModel();
+        while (_connection == null)
+        {
+            try
+            {
+                Console.WriteLine("🔄 Trying to connect to RabbitMQ...");
 
-        // ✅ 声明 exchange
-        _channel.ExchangeDeclare(
-            exchange: "order-created-exchange",
-            type: ExchangeType.Fanout,
-            durable: true);
+                _connection = factory.CreateConnection();
+                _channel = _connection.CreateModel();
 
-        // ✅ 专属队列
-        _channel.QueueDeclare(
-            queue: "payment-queue",
-            durable: true,
-            exclusive: false,
-            autoDelete: false);
+                // ✅ Declare exchange
+                _channel.ExchangeDeclare(
+                    exchange: "order-created-exchange",
+                    type: ExchangeType.Fanout,
+                    durable: true);
 
-        // ✅ 绑定
-        _channel.QueueBind(
-            queue: "payment-queue",
-            exchange: "order-created-exchange",
-            routingKey: "");
+                // ✅ Declare queue
+                _channel.QueueDeclare(
+                    queue: "payment-queue",
+                    durable: true,
+                    exclusive: false,
+                    autoDelete: false);
 
-        Console.WriteLine("✅ PaymentService connected to RabbitMQ (fanout)");
+                // ✅ Bind queue
+                _channel.QueueBind(
+                    queue: "payment-queue",
+                    exchange: "order-created-exchange",
+                    routingKey: "");
+
+                Console.WriteLine("✅ PaymentService connected to RabbitMQ (fanout)");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("❌ RabbitMQ not ready yet.");
+                Console.WriteLine($"Error: {ex.Message}");
+                Console.WriteLine("⏳ Retrying in 5 seconds...");
+                Thread.Sleep(5000);
+            }
+        }
     }
 
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var consumer = new EventingBasicConsumer(_channel);
+        InitializeRabbitMq();
+
+        var consumer = new AsyncEventingBasicConsumer(_channel);
 
         consumer.Received += async (model, ea) =>
         {
-            var json = Encoding.UTF8.GetString(ea.Body.ToArray());
-            var orderEvent = JsonSerializer.Deserialize<OrderCreatedEvent>(json);
-
-            if (orderEvent != null)
+            try
             {
-                using var scope = _scopeFactory.CreateScope();
-                var db = scope.ServiceProvider.GetRequiredService<PaymentDbContext>();
+                var json = Encoding.UTF8.GetString(ea.Body.ToArray());
+                var orderEvent = JsonSerializer.Deserialize<OrderCreatedEvent>(json);
 
-                var payment = new Payment
+                if (orderEvent != null)
+                {
+                    using var scope = _scopeFactory.CreateScope();
+                    var db = scope.ServiceProvider.GetRequiredService<PaymentDbContext>();
+
+                    var payment = new Payment
                 {
                     OrderId = orderEvent.OrderId,
+                    Status = "Processed",
                     CreatedAt = DateTime.UtcNow
                 };
 
-                db.Payments.Add(payment);
-                await db.SaveChangesAsync();
+                    db.Payments.Add(payment);
+                    await db.SaveChangesAsync();
 
-                Console.WriteLine($"✅ Payment processed for Order {orderEvent.OrderId}");
+                    Console.WriteLine($"✅ Payment processed for Order {orderEvent.OrderId}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error processing message: {ex.Message}");
             }
         };
 

@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ProductService.Api.Data;
 using ProductService.Api.Models;
+using ProductService.Api.DTOs;
+
 
 namespace ProductService.Api.Controllers;
 
@@ -16,15 +18,24 @@ public class ProductsController : ControllerBase
         _context = context;
     }
 
-    // ✅ GET ALL
+    // ✅ GET ALL (返回 DTO)
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
         var products = await _context.Products.ToListAsync();
-        return Ok(products);
+
+        var result = products.Select(p => new ProductDto
+        {
+            Id = p.Id,
+            Name = p.Name,
+            Price = p.Price,
+            Stock = p.Stock
+        });
+
+        return Ok(result);
     }
 
-    // ✅ GET BY ID
+    // ✅ GET BY ID (返回 DTO)
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)
     {
@@ -33,32 +44,55 @@ public class ProductsController : ControllerBase
         if (product == null)
             return NotFound();
 
-        return Ok(product);
+        var result = new ProductDto
+        {
+            Id = product.Id,
+            Name = product.Name,
+            Price = product.Price,
+            Stock = product.Stock
+        };
+
+        return Ok(result);
     }
 
-    // ✅ CREATE
+    // ✅ CREATE (接收 DTO)
     [HttpPost]
-    public async Task<IActionResult> Create(Product product)
+    public async Task<IActionResult> Create(CreateProductDto dto)
     {
+        var product = new Product
+        {
+            Name = dto.Name,
+            Price = dto.Price,
+            Stock = dto.Stock
+        };
+
         await _context.Products.AddAsync(product);
         await _context.SaveChangesAsync();
 
+        var result = new ProductDto
+        {
+            Id = product.Id,
+            Name = product.Name,
+            Price = product.Price,
+            Stock = product.Stock
+        };
+
         return CreatedAtAction(nameof(GetById),
-            new { id = product.Id }, product);
+            new { id = product.Id }, result);
     }
 
-    // ✅ UPDATE
+    // ✅ UPDATE (接收 DTO)
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, Product updated)
+    public async Task<IActionResult> Update(int id, UpdateProductDto dto)
     {
         var product = await _context.Products.FindAsync(id);
 
         if (product == null)
             return NotFound();
 
-        product.Name = updated.Name;
-        product.Price = updated.Price;
-        product.Stock = updated.Stock;
+        product.Name = dto.Name;
+        product.Price = dto.Price;
+        product.Stock = dto.Stock;
 
         await _context.SaveChangesAsync();
 
@@ -80,7 +114,7 @@ public class ProductsController : ControllerBase
         return NoContent();
     }
 
-    // ✅ ✅ ✅ 新增：同步扣库存接口
+    // ✅ 扣库存（返回 DTO）
     [HttpPost("{id}/decrease")]
     public async Task<IActionResult> DecreaseStock(int id, [FromQuery] int quantity)
     {
@@ -95,6 +129,14 @@ public class ProductsController : ControllerBase
         product.Stock -= quantity;
         await _context.SaveChangesAsync();
 
-        return Ok(product);
+        var result = new ProductDto
+        {
+            Id = product.Id,
+            Name = product.Name,
+            Price = product.Price,
+            Stock = product.Stock
+        };
+
+        return Ok(result);
     }
 }

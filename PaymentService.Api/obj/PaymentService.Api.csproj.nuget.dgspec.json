@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "/Users/dayufreeman/Desktop/Fdu/ClassesFDU/2026/ProgrammingInternet/Class/DistributedDataAccessLab/PaymentService.Api/PaymentService.Api.csproj": {}
+    "/Users/dayufreeman/Desktop/大渔的奇幻世界_20230807/Fdu（整合）/ClassesFDU/2026/ProgrammingInternet/Class/DistributedDataAccessLab/PaymentService.Api/PaymentService.Api.csproj": {}
   },
   "projects": {
-    "/Users/dayufreeman/Desktop/Fdu/ClassesFDU/2026/ProgrammingInternet/Class/DistributedDataAccessLab/PaymentService.Api/PaymentService.Api.csproj": {
+    "/Users/dayufreeman/Desktop/大渔的奇幻世界_20230807/Fdu（整合）/ClassesFDU/2026/ProgrammingInternet/Class/DistributedDataAccessLab/PaymentService.Api/PaymentService.Api.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/Users/dayufreeman/Desktop/Fdu/ClassesFDU/2026/ProgrammingInternet/Class/DistributedDataAccessLab/PaymentService.Api/PaymentService.Api.csproj",
+        "projectUniqueName": "/Users/dayufreeman/Desktop/大渔的奇幻世界_20230807/Fdu（整合）/ClassesFDU/2026/ProgrammingInternet/Class/DistributedDataAccessLab/PaymentService.Api/PaymentService.Api.csproj",
         "projectName": "PaymentService.Api",
-        "projectPath": "/Users/dayufreeman/Desktop/Fdu/ClassesFDU/2026/ProgrammingInternet/Class/DistributedDataAccessLab/PaymentService.Api/PaymentService.Api.csproj",
+        "projectPath": "/Users/dayufreeman/Desktop/大渔的奇幻世界_20230807/Fdu（整合）/ClassesFDU/2026/ProgrammingInternet/Class/DistributedDataAccessLab/PaymentService.Api/PaymentService.Api.csproj",
         "packagesPath": "/Users/dayufreeman/.nuget/packages/",
-        "outputPath": "/Users/dayufreeman/Desktop/Fdu/ClassesFDU/2026/ProgrammingInternet/Class/DistributedDataAccessLab/PaymentService.Api/obj/",
+        "outputPath": "/Users/dayufreeman/Desktop/大渔的奇幻世界_20230807/Fdu（整合）/ClassesFDU/2026/ProgrammingInternet/Class/DistributedDataAccessLab/PaymentService.Api/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "/Users/dayufreeman/.nuget/NuGet/NuGet.Config"

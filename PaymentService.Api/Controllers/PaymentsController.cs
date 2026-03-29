@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PaymentService.Api.Data;
+using PaymentService.Api.DTOs;
 
 namespace PaymentService.Api.Controllers;
 
@@ -19,6 +20,14 @@ public class PaymentsController : ControllerBase
     public async Task<IActionResult> GetAll()
     {
         var payments = await _context.Payments.ToListAsync();
-        return Ok(payments);
+
+        var result = payments.Select(p => new PaymentDto
+        {
+            Id = p.Id,
+            OrderId = p.OrderId,
+            Status = p.Status
+        });
+
+        return Ok(result);
     }
 }

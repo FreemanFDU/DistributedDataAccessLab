@@ -11,6 +11,8 @@ builder.Services.AddDbContext<PaymentDbContext>(options =>
 // ✅ 注册 RabbitMQ 消费者（后台服务）
 builder.Services.AddHostedService<OrderCreatedConsumer>();
 
+builder.Services.AddHostedService<OrderCancelledConsumer>();
+
 // ✅ 添加 Controller 支持
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

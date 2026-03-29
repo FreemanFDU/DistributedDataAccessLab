@@ -1,0 +1,46 @@
+{
+    "Routes": [
+      {
+        "DownstreamPathTemplate": "/api/orders",
+        "DownstreamScheme": "http",
+        "DownstreamHostAndPorts": [
+          {
+            "Host": "orderservice",
+            "Port": 8080
+          }
+        ],
+        "UpstreamPathTemplate": "/gateway/orders",
+        "UpstreamHttpMethod": [ "GET", "POST" ]
+      },
+      {
+        "DownstreamPathTemplate": "/api/payments",
+        "DownstreamScheme": "http",
+        "DownstreamHostAndPorts": [
+          {
+            "Host": "paymentservice",
+            "Port": 8080
+          }
+        ],
+        "UpstreamPathTemplate": "/gateway/payments",
+        "UpstreamHttpMethod": [ "GET" ]
+      },
+      {
+        "DownstreamPathTemplate": "/api/orders/details/{id}",
+        "DownstreamScheme": "http",
+        "DownstreamHostAndPorts": [
+          {
+            "Host": "orderservice",
+            "Port": 8080
+          }
+        ],
+        "UpstreamPathTemplate": "/gateway/order-details/{id}",
+        "UpstreamHttpMethod": [ "GET" ]
+      }
+
+    ],
+    "GlobalConfiguration": {
+      "BaseUrl": "http://apigateway:8080"
+    }
+
+    
+  }

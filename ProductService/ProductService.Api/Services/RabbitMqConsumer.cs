@@ -22,12 +22,15 @@ public class RabbitMqConsumer : BackgroundService
         var factory = new ConnectionFactory()
         {
             HostName = "rabbitmq",
+            UserName = "guest",
+            Password = "guest",
             DispatchConsumersAsync = true
         };
 
         IConnection? connection = null;
         IModel? channel = null;
 
+        // ✅ 等待 RabbitMQ 启动
         while (!stoppingToken.IsCancellationRequested)
         {
             try
@@ -47,30 +50,55 @@ public class RabbitMqConsumer : BackgroundService
         if (connection == null || channel == null)
             return;
 
-        // ✅ 声明 exchange
+        // =====================================================
+        // ✅ ORDER CREATED
+        // =====================================================
+
         channel.ExchangeDeclare(
             exchange: "order-created-exchange",
             type: ExchangeType.Fanout,
             durable: true);
 
-        // ✅ 专属队列
         channel.QueueDeclare(
             queue: "product-queue",
             durable: true,
             exclusive: false,
             autoDelete: false);
 
-        // ✅ 绑定
         channel.QueueBind(
             queue: "product-queue",
             exchange: "order-created-exchange",
             routingKey: "");
 
+        // =====================================================
+        // ✅ ✅ ORDER CANCELLED (新增部分)
+        // =====================================================
+
+        channel.ExchangeDeclare(
+            exchange: "order-cancelled-exchange",
+            type: ExchangeType.Fanout,
+            durable: true);
+
+        channel.QueueDeclare(
+            queue: "product-cancel-queue",
+            durable: true,
+            exclusive: false,
+            autoDelete: false);
+
+        channel.QueueBind(
+            queue: "product-cancel-queue",
+            exchange: "order-cancelled-exchange",
+            routingKey: "");
+
         channel.BasicQos(0, 1, false);
 
-        var consumer = new AsyncEventingBasicConsumer(channel);
+        // =====================================================
+        // ✅ Consumer 1 — OrderCreated（扣库存）
+        // =====================================================
 
-        consumer.Received += async (model, ea) =>
+        var createdConsumer = new AsyncEventingBasicConsumer(channel);
+
+        createdConsumer.Received += async (model, ea) =>
         {
             try
             {
@@ -93,14 +121,15 @@ public class RabbitMqConsumer : BackgroundService
                 {
                     product.Stock -= orderEvent.Quantity;
                     await db.SaveChangesAsync();
-                    Console.WriteLine($"✅ Stock updated for Product {product.Id}");
+
+                    Console.WriteLine($"✅ Stock decreased for Product {product.Id}");
                 }
 
                 channel.BasicAck(ea.DeliveryTag, false);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"❌ ProductService error: {ex.Message}");
+                Console.WriteLine($"❌ ProductService error (Created): {ex.Message}");
                 channel.BasicNack(ea.DeliveryTag, false, true);
             }
         };
@@ -108,7 +137,54 @@ public class RabbitMqConsumer : BackgroundService
         channel.BasicConsume(
             queue: "product-queue",
             autoAck: false,
-            consumer: consumer);
+            consumer: createdConsumer);
+
+        // =====================================================
+        // ✅ Consumer 2 — OrderCancelled（恢复库存）
+        // =====================================================
+
+        var cancelConsumer = new AsyncEventingBasicConsumer(channel);
+
+        cancelConsumer.Received += async (model, ea) =>
+        {
+            try
+            {
+                var json = Encoding.UTF8.GetString(ea.Body.ToArray());
+                var cancelEvent = JsonSerializer.Deserialize<OrderCancelledEvent>(json);
+
+                if (cancelEvent == null)
+                {
+                    channel.BasicAck(ea.DeliveryTag, false);
+                    return;
+                }
+
+                using var scope = _scopeFactory.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<ProductDbContext>();
+
+                var product = await db.Products
+                    .FirstOrDefaultAsync(p => p.Id == cancelEvent.ProductId);
+
+                if (product != null)
+                {
+                    product.Stock += cancelEvent.Quantity;
+                    await db.SaveChangesAsync();
+
+                    Console.WriteLine($"✅ Stock restored for Product {product.Id}");
+                }
+
+                channel.BasicAck(ea.DeliveryTag, false);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ ProductService error (Cancelled): {ex.Message}");
+                channel.BasicNack(ea.DeliveryTag, false, true);
+            }
+        };
+
+        channel.BasicConsume(
+            queue: "product-cancel-queue",
+            autoAck: false,
+            consumer: cancelConsumer);
 
         await Task.Delay(Timeout.Infinite, stoppingToken);
     }

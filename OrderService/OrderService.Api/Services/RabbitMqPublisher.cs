@@ -22,15 +22,22 @@ public class RabbitMqPublisher : IDisposable
         _connection = factory.CreateConnection();
         _channel = _connection.CreateModel();
 
-        // ✅ 声明 Fanout Exchange
+        // ✅ OrderCreated Exchange
         _channel.ExchangeDeclare(
             exchange: "order-created-exchange",
             type: ExchangeType.Fanout,
             durable: true);
 
-        Console.WriteLine("✅ Publisher connected to RabbitMQ (fanout)");
+        // ✅ ✅ 新增 OrderCancelled Exchange
+        _channel.ExchangeDeclare(
+            exchange: "order-cancelled-exchange",
+            type: ExchangeType.Fanout,
+            durable: true);
+
+        Console.WriteLine("✅ Publisher connected to RabbitMQ");
     }
 
+    // ✅ 发布 OrderCreated
     public void Publish(OrderCreatedEvent orderEvent)
     {
         var message = JsonSerializer.Serialize(orderEvent);
@@ -45,7 +52,25 @@ public class RabbitMqPublisher : IDisposable
             basicProperties: properties,
             body: body);
 
-        Console.WriteLine("📤 OrderCreatedEvent published (fanout).");
+        Console.WriteLine("📤 OrderCreatedEvent published.");
+    }
+
+    // ✅ ✅ 新增发布 OrderCancelled
+    public void PublishOrderCancelled(OrderCancelledEvent cancelEvent)
+    {
+        var message = JsonSerializer.Serialize(cancelEvent);
+        var body = Encoding.UTF8.GetBytes(message);
+
+        var properties = _channel.CreateBasicProperties();
+        properties.Persistent = true;
+
+        _channel.BasicPublish(
+            exchange: "order-cancelled-exchange",
+            routingKey: "",
+            basicProperties: properties,
+            body: body);
+
+        Console.WriteLine("📤 OrderCancelledEvent published.");
     }
 
     public void Dispose()
