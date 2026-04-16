@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.EntityFrameworkCore;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System.Text;
@@ -23,7 +24,7 @@ public class OrderCreatedConsumer : BackgroundService
 
     private void InitializeRabbitMq()
     {
-        var factory = new ConnectionFactory()
+        var factory = new ConnectionFactory
         {
             HostName = "rabbitmq",
             UserName = "guest",
@@ -40,20 +41,20 @@ public class OrderCreatedConsumer : BackgroundService
                 _connection = factory.CreateConnection();
                 _channel = _connection.CreateModel();
 
-                // ✅ Declare exchange
+                // Declare exchange
                 _channel.ExchangeDeclare(
                     exchange: "order-created-exchange",
                     type: ExchangeType.Fanout,
                     durable: true);
 
-                // ✅ Declare queue
+                // Declare queue
                 _channel.QueueDeclare(
                     queue: "payment-queue",
                     durable: true,
                     exclusive: false,
                     autoDelete: false);
 
-                // ✅ Bind queue
+                // Bind queue
                 _channel.QueueBind(
                     queue: "payment-queue",
                     exchange: "order-created-exchange",
@@ -84,23 +85,36 @@ public class OrderCreatedConsumer : BackgroundService
                 var json = Encoding.UTF8.GetString(ea.Body.ToArray());
                 var orderEvent = JsonSerializer.Deserialize<OrderCreatedEvent>(json);
 
-                if (orderEvent != null)
+                if (orderEvent == null)
                 {
-                    using var scope = _scopeFactory.CreateScope();
-                    var db = scope.ServiceProvider.GetRequiredService<PaymentDbContext>();
+                    Console.WriteLine("ℹ️ Received invalid OrderCreatedEvent message.");
+                    return;
+                }
 
-                    var payment = new Payment
+                using var scope = _scopeFactory.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<PaymentDbContext>();
+
+                // Idempotency check: only one payment per order
+                var existingPayment = await db.Payments
+                    .FirstOrDefaultAsync(p => p.OrderId == orderEvent.OrderId);
+
+                if (existingPayment != null)
+                {
+                    Console.WriteLine($"ℹ️ Payment already exists for Order {orderEvent.OrderId}");
+                    return;
+                }
+
+                var payment = new Payment
                 {
                     OrderId = orderEvent.OrderId,
                     Status = "Processed",
                     CreatedAt = DateTime.UtcNow
                 };
 
-                    db.Payments.Add(payment);
-                    await db.SaveChangesAsync();
+                db.Payments.Add(payment);
+                await db.SaveChangesAsync();
 
-                    Console.WriteLine($"✅ Payment processed for Order {orderEvent.OrderId}");
-                }
+                Console.WriteLine($"✅ Payment processed for Order {orderEvent.OrderId}");
             }
             catch (Exception ex)
             {

@@ -4,38 +4,35 @@ using PaymentService.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ✅ 注册 SQLite 数据库
+// Register SQLite database
 builder.Services.AddDbContext<PaymentDbContext>(options =>
     options.UseSqlite("Data Source=Data/payments.db"));
 
-// ✅ 注册 RabbitMQ 消费者（后台服务）
+// Register RabbitMQ consumers as background services
 builder.Services.AddHostedService<OrderCreatedConsumer>();
-
 builder.Services.AddHostedService<OrderCancelledConsumer>();
 
-// ✅ 添加 Controller 支持
+// Add controller support
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// ✅ 确保 Data 目录存在 + 自动创建数据库
+// Ensure Data directory exists and database is created
+Directory.CreateDirectory("Data");
+
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<PaymentDbContext>();
-
-    // 创建 Data 文件夹（Docker 内）
-    Directory.CreateDirectory("Data");
-
     db.Database.EnsureCreated();
 }
 
-// ✅ 启用 Swagger
+// Enable Swagger
 app.UseSwagger();
 app.UseSwaggerUI();
 
-// ✅ 映射 Controller
+// Map controllers
 app.MapControllers();
 
 app.Run();

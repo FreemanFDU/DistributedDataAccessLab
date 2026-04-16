@@ -40,20 +40,20 @@ public class OrderCancelledConsumer : BackgroundService
                 _connection = factory.CreateConnection();
                 _channel = _connection.CreateModel();
 
-                // ✅ 声明 exchange
+                // ✅ Declare exchange
                 _channel.ExchangeDeclare(
                     exchange: "order-cancelled-exchange",
                     type: ExchangeType.Fanout,
                     durable: true);
 
-                // ✅ 声明队列
+                // ✅ Declare queue
                 _channel.QueueDeclare(
                     queue: "payment-cancel-queue",
                     durable: true,
                     exclusive: false,
                     autoDelete: false);
 
-                // ✅ 绑定
+                // ✅ Bind queue
                 _channel.QueueBind(
                     queue: "payment-cancel-queue",
                     exchange: "order-cancelled-exchange",
@@ -91,13 +91,22 @@ public class OrderCancelledConsumer : BackgroundService
                     var payment = await db.Payments
                         .FirstOrDefaultAsync(p => p.OrderId == cancelEvent.OrderId);
 
-                    if (payment != null)
+                    if (payment == null)
                     {
-                        payment.Status = "Cancelled";
-                        await db.SaveChangesAsync();
-
-                        Console.WriteLine($"✅ Payment cancelled for Order {cancelEvent.OrderId}");
+                        Console.WriteLine($"ℹ️ No payment found for Order {cancelEvent.OrderId}");
+                        return;
                     }
+
+                    if (payment.Status == "Cancelled")
+                    {
+                        Console.WriteLine($"ℹ️ Payment already cancelled for Order {cancelEvent.OrderId}");
+                        return;
+                    }
+
+                    payment.Status = "Cancelled";
+                    await db.SaveChangesAsync();
+
+                    Console.WriteLine($"✅ Payment cancelled for Order {cancelEvent.OrderId}");
                 }
             }
             catch (Exception ex)

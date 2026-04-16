@@ -29,7 +29,7 @@ public class OrdersController : ControllerBase
         _publisher = publisher;
     }
 
-    // ✅ 获取全部订单（返回 DTO）
+    // ✅ 获取全部订单（DTO）
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
@@ -47,47 +47,15 @@ public class OrdersController : ControllerBase
         return Ok(result);
     }
 
-    // ✅ 创建订单（接收 DTO）
-    [HttpPost]
-    public async Task<IActionResult> Create(CreateOrderDto dto)
+    // ✅ 获取单个订单（⭐新增，替代 details）
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetById(int id)
     {
-        // 1️⃣ 验证 Customer
-        var customerExists = await _customerClient
-            .CustomerExistsAsync(dto.CustomerId);
+        var order = await _context.Orders.FindAsync(id);
 
-        if (!customerExists)
-            return BadRequest("Customer does not exist.");
+        if (order == null)
+            return NotFound();
 
-        // 2️⃣ 验证 Product
-        var productExists = await _productClient
-            .ProductExistsAsync(dto.ProductId);
-
-        if (!productExists)
-            return BadRequest("Product does not exist.");
-
-        // 3️⃣ 创建实体（DTO → Entity）
-        var order = new Order
-        {
-            CustomerId = dto.CustomerId,
-            ProductId = dto.ProductId,
-            Quantity = dto.Quantity,
-            Status = "Created"
-        };
-
-        await _context.Orders.AddAsync(order);
-        await _context.SaveChangesAsync();
-
-        // 4️⃣ 发布 OrderCreated 事件
-        var orderEvent = new OrderCreatedEvent
-        {
-            OrderId = order.Id,
-            ProductId = order.ProductId,
-            Quantity = order.Quantity
-        };
-
-        _publisher.Publish(orderEvent);
-
-        // ✅ 返回 DTO（不要返回实体）
         var result = new OrderDto
         {
             Id = order.Id,
@@ -100,38 +68,61 @@ public class OrdersController : ControllerBase
         return Ok(result);
     }
 
-
-    [HttpGet("details/{id}")]
-    public async Task<IActionResult> GetOrderDetails(int id)
+    // ✅ 创建订单（DTO）
+    [HttpPost]
+    public async Task<IActionResult> Create(CreateOrderDto dto)
     {
-        var order = await _context.Orders
-            .FirstOrDefaultAsync(o => o.Id == id);
+        // ✅ 验证 Customer
+        var customerExists = await _customerClient
+            .CustomerExistsAsync(dto.CustomerId);
 
-        if (order == null)
-            return NotFound();
+        if (!customerExists)
+            return BadRequest("Customer does not exist.");
 
-        // ✅ 调用 CustomerService
-        var customer = await _customerClient
-            .GetCustomerAsync(order.CustomerId);
+        // ✅ 验证 Product
+        var productExists = await _productClient
+            .ProductExistsAsync(dto.ProductId);
 
-        // ✅ 调用 ProductService
-        var product = await _productClient
-            .GetProductAsync(order.ProductId);
+        if (!productExists)
+            return BadRequest("Product does not exist.");
 
-        var result = new OrderDetailsDto
+        // ✅ 创建订单
+        var order = new Order
+        {
+            CustomerId = dto.CustomerId,
+            ProductId = dto.ProductId,
+            Quantity = dto.Quantity,
+            Status = "Created"
+        };
+
+        await _context.Orders.AddAsync(order);
+        await _context.SaveChangesAsync();
+
+        // ✅ 发布 OrderCreated 事件
+        var orderEvent = new OrderCreatedEvent
         {
             OrderId = order.Id,
-            Status = order.Status,
+            ProductId = order.ProductId,
+            Quantity = order.Quantity
+        };
+
+        _publisher.Publish(orderEvent);
+
+        var result = new OrderDto
+        {
+            Id = order.Id,
+            CustomerId = order.CustomerId,
+            ProductId = order.ProductId,
             Quantity = order.Quantity,
-            Customer = customer,
-            Product = product
+            Status = order.Status
         };
 
         return Ok(result);
     }
 
+    // ❌ 已删除 details/{id}（Aggregation 不在这里做）
 
-    // ✅ 取消订单（返回 DTO）
+    // ✅ 取消订单
     [HttpPost("{id}/cancel")]
     public async Task<IActionResult> Cancel(int id)
     {
@@ -160,7 +151,6 @@ public class OrdersController : ControllerBase
 
         Console.WriteLine($"📤 OrderCancelledEvent published for Order {order.Id}");
 
-        // ✅ 返回 DTO
         var result = new OrderDto
         {
             Id = order.Id,

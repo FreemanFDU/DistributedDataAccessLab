@@ -17,7 +17,21 @@ public class CustomersController : ControllerBase
         _context = context;
     }
 
-    // ✅ GET by id（返回 DTO）
+    [HttpGet]
+    public async Task<IActionResult> GetAll()
+    {
+        var customers = await _context.Customers.ToListAsync();
+
+        var result = customers.Select(c => new CustomerDto
+        {
+            Id = c.Id,
+            Name = c.Name,
+            Email = c.Email
+        });
+
+        return Ok(result);
+    }
+
     [HttpGet("{id}")]
     public async Task<ActionResult<CustomerDto>> GetById(int id)
     {
@@ -36,7 +50,6 @@ public class CustomersController : ControllerBase
         return Ok(result);
     }
 
-    // ✅ POST（接收 DTO）
     [HttpPost]
     public async Task<IActionResult> Create(CreateCustomerDto dto)
     {
